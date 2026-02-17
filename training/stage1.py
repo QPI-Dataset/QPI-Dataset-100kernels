@@ -5,6 +5,9 @@ from diffusers import AutoencoderKL
 import os
 from tqdm import tqdm
 import torch.nn.functional as F
+# import cv2
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 """Stage-1 model training: Symmetry-aware VAE on kernel images"""
@@ -97,9 +100,11 @@ def cal_symmetry_loss(batch_n_fold, batch_kernel, batch_rec, middle_size=40):
     return loss
 
 # Training and testing function
-def run(vae, fold_file, train_data_dir, test_data_dir, model_save_path, loss_dir,alpha,beta,
-        num_epochs, batch_size, initial_lr, step_size, gamma):
-
+def run(vae, fold_file, train_data_dir, test_data_dir, model_save_path, loss_dir,alpha=0.5,beta=0.001,
+        num_epochs=10, batch_size=8, initial_lr=1e-4, step_size=50, gamma=0.5):
+    # Create save directory
+    # if not os.path.exists(save_dir):
+    #     os.makedirs(save_dir)
     if not os.path.exists(loss_dir):
         os.makedirs(loss_dir)
 
@@ -111,7 +116,7 @@ def run(vae, fold_file, train_data_dir, test_data_dir, model_save_path, loss_dir
 
     # Define optimizer
     optimizer = torch.optim.Adam(vae.parameters(), lr=initial_lr)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=2*step_size, gamma=gamma)
     # Training and testing loop
     train_loss_list = []
     test_loss_list = []
@@ -120,6 +125,7 @@ def run(vae, fold_file, train_data_dir, test_data_dir, model_save_path, loss_dir
         # Training phase
         vae.train()
         epoch_train_loss = 0
+        # loss_all=0
 
         for batch_idx, (fold_num, batch) in enumerate(train_dataloader):
             fold_num = fold_num.to(device)
@@ -143,13 +149,17 @@ def run(vae, fold_file, train_data_dir, test_data_dir, model_save_path, loss_dir
             loss = loss + kl_loss * beta
             # Backward propagation and optimization
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(vae.parameters(), max_norm=1.0)
             optimizer.step()
 
             epoch_train_loss += loss.item()
+            # loss_all+=loss.item()
 
         epoch_train_loss /= len(train_dataloader)
+        # loss_all /= len(train_dataloader)
         train_loss_list.append(epoch_train_loss)
         print(f"Epoch [{epoch + 1}/{num_epochs}], Train Loss: {epoch_train_loss:.6f}")
+        # print('loss_all:', loss_all)
 
         # Testing phase
         vae.eval()
@@ -180,6 +190,7 @@ def run(vae, fold_file, train_data_dir, test_data_dir, model_save_path, loss_dir
         print(f"Epoch [{epoch + 1}/{num_epochs}], Test Loss: {epoch_test_loss:.6f}")
 
         scheduler.step()
+        # break
         # Save training and testing losses
         with open(os.path.join(loss_dir, f'train1_kl_beta{beta}_alpha{alpha}_train_loss.txt'), 'a') as f:
             f.write(f"{epoch + 1}:  {epoch_train_loss}||     ")
@@ -232,17 +243,17 @@ if __name__ == "__main__":
     step_size = 10
     gamma = 0.97
     # Data paths
-    train_data_dir = '/data/coding/kernel/train'
-    test_data_dir = '/data/coding/kernel/test'
+    train_data_dir = './data/kernel/train'
+    test_data_dir = './data/kernel/test'
 
-    model_ori_path = "/data/coding/vae_test2"  # madebyollin/sdxl-vae-fp16-fix
-    model_path = f'/data/coding/stage1/kl_beta{beta}_alpha{alpha}_g{gamma}/vae_kl_time1'
-    model_save_path = f'/data/coding/stage1/kl_beta{beta}_alpha{alpha}_g{gamma}/vae_kl_time1'
+    model_ori_path = "./data/models/pretrained_vae"  # madebyollin/sdxl-vae-fp16-fix
+    model_path = f'./data/models/stage1/kl_beta{beta}_alpha{alpha}_g{gamma}/vae_kl_time1'
+    model_save_path = f'./data/models/stage1/kl_beta{beta}_alpha{alpha}_g{gamma}/vae_kl_time1'
 
-    loss_dir = f'/data/coding/stage1/kl_beta{beta}_alpha{alpha}_g{gamma}/loss/'
-    nfold_dir = "/data/coding/kernel_latents/n_fold_noise.npy"
+    loss_dir = f'./data/loss/stage1/kl_beta{beta}_alpha{alpha}_g{gamma}/loss/'
+    nfold_dir = "./data/kernel_latents/n_fold_noise.npy"
 
-    url = "D:/桌面/domain_adaptation/STIR/vae_non_pretrained"#/vae-ft-kl-840000-ema-pruned.safetensors"
+    url = "./data/models/pretrained_vae"
     # print(diffusers.__version__)
     if not os.path.exists(loss_dir):
         os.makedirs(loss_dir)

@@ -10,9 +10,9 @@ Update the paths below to match your local data layout.
 """
 
 # Root folders
-main_folder1 = "D:/桌面/STIR/64X64 kernels/data_noise/observation_nom/"
-main_folder2 = "D:/桌面/STIR/64X64 kernels/data_noise/activation_map/data_npy/"
-output_folder = 'D:/桌面/STIR/64X64 kernels/data_noise/channel2_mixed_data/'
+main_folder1 = "./data/observation/nom/"
+main_folder2 = "./data/activation/map/"
+output_folder = './data/channel2_mixed/all/'
 
 # Iterate over all kernel subfolders
 for sub_folder_name in tqdm(os.listdir(main_folder1)):

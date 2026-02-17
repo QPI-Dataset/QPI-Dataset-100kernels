@@ -2,8 +2,8 @@ import os
 import numpy as np
 from tqdm import tqdm
 
-SRC_DIR = 'D:/桌面/STIR/64X64 kernels/data_noise_free/observation/data_npy'   # Source folder
-DST_DIR = 'D:/桌面/STIR/64X64 kernels/data_noise_free/observation_nom' # Output folder for normalized results
+SRC_DIR = './data/observation/npy'   # Source folder
+DST_DIR = './data/observation/nom' # Output folder for normalized results
 ROWS, COLS = 64, 64
 
 os.makedirs(DST_DIR, exist_ok=True)

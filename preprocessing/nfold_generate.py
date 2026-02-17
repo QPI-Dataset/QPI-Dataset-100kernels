@@ -31,7 +31,7 @@ for nfold, kernel_indices in symmetry_map.items():
 
 nfold_labels = np.array(nfold_labels, dtype=int)
 
-output_path = "D:/桌面/STIR/64X64 kernels stage2/kernel_latents/n_fold_noise.npy"
+output_path = "./data/kernel_latents/n_fold_noise.npy"
 np.save(output_path, nfold_labels)
 
 print('n-fold labels generated and saved.')

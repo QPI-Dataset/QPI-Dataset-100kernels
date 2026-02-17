@@ -44,7 +44,7 @@ class CustomNpyDataset(Dataset):
             train_test_dir = root_dir
 
             for folder_name in sorted(os.listdir(train_test_dir)):
-                    original_file_dir = "/data/coding/kernel/train/"
+                    original_file_dir = "./data/kernel/train/"
                     folder_path = os.path.join(train_test_dir, folder_name)
                     if os.path.isdir(folder_path):
                         # Get kernel index from folder name
@@ -75,7 +75,7 @@ class CustomNpyDataset(Dataset):
 
                 for folder_name in sorted(os.listdir(train_test_dir)):
                     flag_data_length = 0
-                    original_file_dir = "/data/coding/kernel/train/"
+                    original_file_dir = "./data/kernel/train/"
                     folder_path = os.path.join(train_test_dir, folder_name)
                     if os.path.isdir(folder_path):
                         # Get kernel index from folder name
@@ -123,12 +123,12 @@ def run(
     latents_file,
     model_save_path,
     loss_dir,
-    num_epochs,
-    batch_size,
-    initial_lr,
-    step_size,
-    gamma,
-    beta,
+    num_epochs=10,
+    batch_size=8,
+    initial_lr=1e-4,
+    step_size=50,
+    gamma=0.5,
+    beta=0.0001,
 ):
     """
     Train and evaluate the 1-step baseline encoder.
@@ -183,6 +183,7 @@ def run(
             optimizer.step()
 
             epoch_train_loss += loss.item()
+            # break
 
         epoch_train_loss /= len(train_dataloader)
         train_loss_list.append(epoch_train_loss)
@@ -207,12 +208,14 @@ def run(
                 loss += kl_loss * beta
 
                 epoch_test_loss += loss.item()
+                # break
 
         epoch_test_loss /= len(test_dataloader)
         test_loss_list.append(epoch_test_loss)
         print(f"Epoch [{epoch + 1}/{num_epochs}], Test Loss: {epoch_test_loss:.6f}")
 
         scheduler.step()
+        # break
 
         # Save training and test losses to text files
         with open(os.path.join(loss_dir, f'1step_train_loss.txt'), 'a') as f:
@@ -243,7 +246,7 @@ def run(
 
     save_pth = os.path.join(loss_dir, f"train1_1step_t.png")
     x = np.arange(len(train_loss_list_cpu))
-
+    # Plot train vs test loss
     plt.figure(figsize=(10, 6))
     plt.plot(x, train_loss_list_cpu, label='Train loss', color='blue', marker='o')
     plt.plot(x, test_loss_list_cpu, label='Test loss', color='red', marker='x')
@@ -262,17 +265,17 @@ if __name__ == "__main__":
     train_length = 250
 
     # Data paths
-    train_data_dir = f"/data/coding/channel2_mixed_data_train&test/train"
-    test_data_dir = f"/data/coding/channel2_mixed_data_train&test/test"
+    train_data_dir = f"./data/channel2_mixed/train"
+    test_data_dir = f"./data/channel2_mixed/test"
 
-    latents_file = "/data/coding/kernel_latents/train1/100kernels.npy"
+    latents_file = "./data/kernel_latents/100kernel_latent_vectors.npy"
 
-    model_ori_path = "/data/coding/vae_test2"  # madebyollin/sdxl-vae-fp16-fix
-    model_path = f"/data/coding/1step_train1/time1"
-    model_save_path = f"/data/coding/1step_train1/t"
+    model_ori_path = "./data/models/pretrained_vae"  # madebyollin/sdxl-vae-fp16-fix
+    model_path = f"./data/models/1step"
+    model_save_path = f"./data/models/1step"
 
-    loss_dir = '/data/coding/1step_train1/loss/'
-    nfold_dir = "/data/coding/kernel_latents/n_fold_noise.npy"
+    loss_dir = './data/loss/1step/'
+    nfold_dir = "./data/kernel_latents/n_fold_noise.npy"
 
     if not os.path.exists(loss_dir):
         os.makedirs(loss_dir)

@@ -7,17 +7,17 @@ import matplotlib.pyplot as plt
 """Visualization of observations and/or activation maps per kernel."""
 
 # Activation summary: per-observation activation counts or labels
-act_summary = pd.read_csv("D:/桌面/STIR/experimental_data/64X64/result_with_labels.csv", header=None)
+act_summary = pd.read_csv("./data/observation/result_with_labels.csv", header=None)
 
 # Root folder containing per-kernel observation or activation-map .npy files
-main_folder = "D:/桌面/STIR/64X64 kernels stage2/data_observation/observation_nom/"
+main_folder = "./data/observation/nom/"
 
 # Iterate over all kernel subfolders
 sub_folder_index = 0
 for sub_folder_name in os.listdir(main_folder):
     sub_folder_index += 1
     sub_folder_path = os.path.join(main_folder, sub_folder_name)
-    output_dir_obs_npy = f"D:/桌面/STIR/64X64 kernels stage2/figure/observation_figure/Kernel number{sub_folder_index}/"
+    output_dir_obs_npy = f"./data/figures/observation/Kernel number{sub_folder_index}/"
 
     if os.path.isdir(sub_folder_path):
         # For each kernel, plot up to 500 activation maps / observations

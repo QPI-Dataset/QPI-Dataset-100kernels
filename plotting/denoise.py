@@ -73,7 +73,7 @@ def make_grid(tiles, strengths_labels, out_path, tile_size=128):
     rows = len(algos_order)
 
     grid_w = cols * tile_size
-    grid_h = rows * (tile_size + 28)  # 留标题
+    grid_h = rows * (tile_size + 28)  # Reserve space for title
     canvas = Image.new("RGB", (grid_w, grid_h), 255)
     draw = ImageDraw.Draw(canvas)
 
@@ -102,7 +102,7 @@ import matplotlib.pyplot as plt
 def make_grid_matplotlib(img, tiles, out_path):
     """Make a comparison grid (original vs light/heavy denoise) using Matplotlib."""
     algos = list(tiles.keys())
-    cols = 3  # 原图 + 轻度 + 重度
+    cols = 3  # Original + Light + Heavy
     rows = len(algos)
 
     fig, axes = plt.subplots(rows, cols, figsize=(3*cols, 3*rows))
@@ -111,17 +111,17 @@ def make_grid_matplotlib(img, tiles, out_path):
         axes = [axes]
 
     for r, algo in enumerate(algos):
-        # 原图
+        # Original image
         axes[r][0].imshow(np.array(img), cmap="coolwarm")
         axes[r][0].set_title("Original", fontsize=10)
         axes[r][0].axis("off")
 
-        # 轻度
+        # Light denoising
         axes[r][1].imshow(np.array(tiles[algo]["light"]), cmap="coolwarm")
         axes[r][1].set_title(f"{algo} | Strength coefficient=0.3", fontsize=10)
         axes[r][1].axis("off")
 
-        # 重度
+        # Heavy denoising
         axes[r][2].imshow(np.array(tiles[algo]["heavy"]), cmap="coolwarm")
         axes[r][2].set_title(f"{algo} | Strength coefficient=0.7", fontsize=10)
         axes[r][2].axis("off")
@@ -141,13 +141,13 @@ def main(file_title, input_file, out_dir):
         params_log[algo_name] = {}
         tiles_dict[algo_name] = {}
 
-        # 轻度
+        # Light denoising
         out_img_light, params_light = func(img, strengths[0])
         # out_img_light.save(os.path.join(out_dir, f"{algo_name}_light.png"))
         params_log[algo_name][f"light"] = params_light
         tiles_dict[algo_name][f"light"] = out_img_light
 
-        # 重度
+        # Heavy denoising
         out_img_heavy, params_heavy = func(img, strengths[1])
         # out_img_heavy.save(os.path.join(out_dir, f"{algo_name}_heavy.png"))
         params_log[algo_name][f"heavy"] = params_heavy
@@ -156,8 +156,8 @@ def main(file_title, input_file, out_dir):
     grid_path = os.path.join(out_dir, f"{file_title} denoise_grid.png")
     make_grid_matplotlib(img, tiles_dict, grid_path)
 
-root_dir = 'D:/桌面/STIR/experimental_data/64X64/observation_nom'
-out_root_path = r"D:/桌面/STIR/64X64 kernels/data_noise/figure/denoise_kernel_3way"  # output directory
+root_dir = './data/observation/nom'
+out_root_path = "./data/figures/denoise"  # output directory
 strengths = [0.3, 0.5, 0.7]             # denoising strengths
 
 

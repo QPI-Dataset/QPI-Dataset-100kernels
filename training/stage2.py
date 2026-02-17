@@ -5,6 +5,8 @@ from diffusers import AutoencoderKL
 import os
 from tqdm import tqdm
 import math
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 """Stage-2 training: encoder from observations to latent space"""
 
@@ -13,10 +15,11 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 
 # Define dataset class
 class CustomNpyDataset(Dataset):
-    def __init__(self, root_dir, label_file, fold_file, len_train, len_test, is_train=True):
+    def __init__(self, root_dir, label_file, fold_file, len_train, len_test, is_train=True, kernel_dir=None):
         """
         :param root_dir: Root directory of dataset
         :param label_file: Path to .npy file storing labels - i.e., latent vectors
+        :param kernel_dir: Path to kernel train directory for filtering valid kernels
         """
         self.data_paths = []
         self.labels = []
@@ -32,14 +35,14 @@ class CustomNpyDataset(Dataset):
         self.fold_array = np.load(fold_file)
         self.folds = []
 
+        self.kernel_dir = kernel_dir
+
         # Traverse folders to get data paths and labels
         if self.is_train:
-            # for act_num in sorted(os.listdir(root_dir)):
-            #     train_test_dir = os.path.join(root_dir, f"{act_num}/train")
                 train_test_dir = root_dir
 
                 for folder_name in sorted(os.listdir(train_test_dir)):
-                    original_file_dir = "/data/coding/kernel/train/"
+                    original_file_dir = self.kernel_dir
                     folder_path = os.path.join(train_test_dir, folder_name)
                     if os.path.isdir(folder_path):
                         # Get current folder index
@@ -70,7 +73,7 @@ class CustomNpyDataset(Dataset):
 
             for folder_name in sorted(os.listdir(train_test_dir)):
                     flag_data_length = 0
-                    original_file_dir = "/data/coding/kernel/train/"
+                    original_file_dir = self.kernel_dir
                     folder_path = os.path.join(train_test_dir, folder_name)
                     if os.path.isdir(folder_path):
                         # Get current folder index
@@ -113,8 +116,10 @@ class CustomNpyDataset(Dataset):
 
 # Training and testing function
 def run( fold_file, train_data_length, vae, train_data_dir, test_data_dir, latents_file, model_save_path, loss_dir,
-        num_epochs, batch_size, initial_lr, step_size, gamma):
-
+        num_epochs=10, batch_size=8, initial_lr=1e-4, step_size=50, gamma=0.5, kernel_dir=None):
+    # Create save directory
+    # if not os.path.exists(save_dir):
+    #     os.makedirs(save_dir)
     if not os.path.exists(loss_dir):
         os.makedirs(loss_dir)
 
@@ -122,14 +127,14 @@ def run( fold_file, train_data_length, vae, train_data_dir, test_data_dir, laten
     # Data loaders
     test_data_length = math.floor(train_data_length * 0.25)
     train_dataset = CustomNpyDataset(train_data_dir, kernel_latents_file,fold_file, train_data_length, test_data_length,
-                                     is_train=True)
+                                     is_train=True, kernel_dir=kernel_dir)
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    # print(train_dataset.train_flag)
+    print(train_dataset.train_flag)
 
     test_dataset = CustomNpyDataset(test_data_dir, kernel_latents_file,fold_file, train_data_length, test_data_length,
-                                    is_train=False)
+                                    is_train=False, kernel_dir=kernel_dir)
     test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
-    # print(test_dataset.test_flag)
+    print(test_dataset.test_flag)
 
     print('data load finished')
 
@@ -147,6 +152,7 @@ def run( fold_file, train_data_length, vae, train_data_dir, test_data_dir, laten
         for batch_idx, (batch, label_latents) in enumerate(train_dataloader):
             batch = batch.to(device)
 
+            # reshaped_tensor = label_latents.to(device)
             reshaped_tensor = label_latents.view(label_latents.shape[0], 2 * 4, 8, 8)  # Shape becomes (8, 8, 8, 8)
             mean_label, logvar_label = torch.chunk(reshaped_tensor, 2, dim=1)
             mean_label = mean_label.to(device)
@@ -156,6 +162,7 @@ def run( fold_file, train_data_length, vae, train_data_dir, test_data_dir, laten
 
             # Encode
             latents = vae.encode(batch).latent_dist
+            # rec = vae.decode(latents).sample
             mean = latents.mean
             logvar = latents.logvar
 
@@ -163,9 +170,11 @@ def run( fold_file, train_data_length, vae, train_data_dir, test_data_dir, laten
             loss = torch.mean((mean - mean_label) ** 2) + torch.mean((logvar - logvar_label) ** 2)
 
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(vae.parameters(), max_norm=1.0)
             optimizer.step()
 
             epoch_train_loss += loss.item()
+            # break
 
         epoch_train_loss /= len(train_dataloader)
         train_loss_list.append(epoch_train_loss)
@@ -178,6 +187,7 @@ def run( fold_file, train_data_length, vae, train_data_dir, test_data_dir, laten
             for batch_idx, (batch, label_latents) in enumerate(test_dataloader):
                 batch = batch.to(device)
 
+                # reshaped_tensor = label_latents.to(device)
                 reshaped_tensor = label_latents.view(label_latents.shape[0], 2 * 4, 8, 8)  # Shape becomes (8, 8, 8, 8)
                 mean_label, logvar_label = torch.chunk(reshaped_tensor, 2, dim=1)
                 mean_label = mean_label.to(device)
@@ -192,12 +202,14 @@ def run( fold_file, train_data_length, vae, train_data_dir, test_data_dir, laten
                 loss = torch.mean((mean - mean_label) ** 2) + torch.mean((logvar - logvar_label) ** 2)
 
                 epoch_test_loss += loss.item()
+                # break
 
         epoch_test_loss /= len(test_dataloader)
         test_loss_list.append(epoch_test_loss)
         print(f"Epoch [{epoch + 1}/{num_epochs}], Test Loss: {epoch_test_loss:.6f}")
 
         scheduler.step()
+        # break
         # Save training and testing losses
         with open(os.path.join(loss_dir, f'noise_train_loss.txt'), 'a') as f:
             f.write(f"{epoch + 1}:  {epoch_train_loss}||     ")
@@ -227,15 +239,18 @@ def run( fold_file, train_data_length, vae, train_data_dir, test_data_dir, laten
 
     save_pth = os.path.join(loss_dir, f"train1_noise_time1.png")
     x = np.arange(len(train_loss_list_cpu))
-
+    # Plot two arrays
     plt.figure(figsize=(10, 6))  # Set figure size
     plt.plot(x, train_loss_list_cpu, label='Train loss', color='blue', marker='o')  # Plot first array
     plt.plot(x, test_loss_list_cpu, label='Test loss', color='red', marker='x')  # Plot second array
     plt.legend()
+    # Add title and axis labels
     plt.title(f"loss visualization - train1_noise_time1")
     plt.xlabel('epochs')
     plt.ylabel('loss')
+    # Show grid
     plt.grid(True)
+    # Display image
     plt.savefig(save_pth)
 
     print('-----------------Training completed------------------')
@@ -248,19 +263,16 @@ if __name__ == "__main__":
     train_length = 250
 
     # Data paths
-    train_data_dir = f"/data/coding/channel2_mixed_data_train&test/train"
-    test_data_dir = f"/data/coding/channel2_mixed_data_train&test/test"
+    train_data_dir = "./data/channel2_mixed/train"
+    test_data_dir = "./data/channel2_mixed/test"
 
-    latents_file \
-        = "/data/coding/kernel_latents/train1/kl_beta1e-06_alpha0.7_g0.97/100kernel latent vectors.npy"
+    latents_file = "./data/kernel_latents/100kernel_latent_vectors.npy"
 
+    model_ori_path = "./data/models/pretrained_vae"  # madebyollin/sdxl-vae-fp16-fix
+    model_save_path = "./data/models/stage2"
 
-    model_ori_path = "/data/coding/vae_test2"  # madebyollin/sdxl-vae-fp16-fix
-    # model_path = f"D:/桌面/STIR/64X64 kernels stage2/train1/kl/noise"
-    model_save_path = f"/data/coding/stage2/kl/time1"
-
-    loss_dir = '/data/coding/train1/kl/loss/'
-    nfold_dir = "/data/coding/kernel_latents/n_fold_noise.npy"
+    loss_dir = './data/loss/stage2/'
+    nfold_dir = "./data/kernel_latents/n_fold_noise.npy"
 
     if not os.path.exists(loss_dir):
         os.makedirs(loss_dir)

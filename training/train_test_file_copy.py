@@ -10,9 +10,9 @@ By default, ~20% of samples are copied to the test set and the rest to the train
 Update the paths below to match your local data layout.
 """
 
-main_folder = "D:/桌面/STIR/64X64 kernels/data_noise/channel2_mixed_data/"
-train = "D:/桌面/STIR/64X64 kernels/data_noise/channel2_mixed_data_train&test/train/"
-test = "D:/桌面/STIR/64X64 kernels/data_noise/channel2_mixed_data_train&test/test/"
+main_folder = "./data/channel2_mixed/all/"
+train = "./data/channel2_mixed/train/"
+test = "./data/channel2_mixed/test/"
 
 # Iterate over kernel subfolders
 for sub_folder_index in tqdm(range(1, 101)):
@@ -21,7 +21,7 @@ for sub_folder_index in tqdm(range(1, 101)):
 
     # Only split kernels that are included in the stage-1 training set
     kernel_name = f"Kernel number{sub_folder_index}nom_2d.npy"
-    kernel_path = os.path.join("D:/桌面/STIR/64X64 kernels/data_noise/kernel/train/", kernel_name)
+    kernel_path = os.path.join("./data/kernel/train/", kernel_name)
     if os.path.isfile(kernel_path) and os.path.isdir(sub_folder_path):
         source_folder = sub_folder_path
         folder_train = os.path.join(train, sub_folder_name)

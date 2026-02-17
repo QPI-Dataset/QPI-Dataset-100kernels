@@ -10,7 +10,7 @@ Update the paths below to match your local data layout.
 """
 
 # Root folder that contains one subfolder per kernel, each with activation CSV files
-main_folder = "D:/桌面/STIR/64X64 kernels/data_noise_free/activation/"
+main_folder = "./data/activation/csv/"
 
 # Placeholder for optional statistics (not currently used)
 results = [[0 for _ in range(100)] for _ in range(500)]
@@ -20,7 +20,7 @@ sub_folder_index = 1
 for sub_folder_name in tqdm(os.listdir(main_folder)):
     sub_folder_path = os.path.join(main_folder, sub_folder_name)
 
-    output_dir_obs_npy = f"D:/桌面/STIR/64X64 kernels/data_noise_free/activation_map/data_npy/{sub_folder_name}/"
+    output_dir_obs_npy = f"./data/activation/map/{sub_folder_name}/"
     os.makedirs(output_dir_obs_npy, exist_ok=True)
 
     # Ensure the subfolder exists

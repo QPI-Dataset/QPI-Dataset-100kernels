@@ -10,12 +10,12 @@ Update the paths below to match your local data layout.
 """
 
 # Input folder containing raw CSV files from the QPI dataset
-input_folder = 'D:/桌面/STIR/64X64 training data time3/64X64 vp coords/'
+input_folder = './data/raw/64X64 vp coords/'
 
 # Output base folders
-output_folder_obs_csv = 'D:/桌面/STIR/64X64 kernels/data_noise_free/observation/data_csv/'
-output_folder_obs_npy = 'D:/桌面/STIR/64X64 kernels/data_noise_free/observation/data_npy/'
-output_folder_act = 'D:/桌面/STIR/64X64 kernels/data_noise_free/activation/'
+output_folder_obs_csv = './data/observation/csv/'
+output_folder_obs_npy = './data/observation/npy/'
+output_folder_act = './data/activation/csv/'
 
 
 def count_lines(filename, encoding='utf-8'):
@@ -86,7 +86,7 @@ for filename in tqdm(os.listdir(input_folder)):
         print(f"File {filename} processed.")
 
         max_min_df = pd.DataFrame(max_min_values, columns=['Filename', 'Max_Value', 'Min_Value'])
-        summary_dir = 'D:/桌面/STIR/experimental_data/64X64/obs_summary/'
+        summary_dir = './data/observation/summary/'
         if not os.path.exists(summary_dir):
             os.makedirs(summary_dir)
 

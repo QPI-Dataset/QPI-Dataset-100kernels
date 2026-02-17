@@ -42,6 +42,20 @@ class CustomDataset(Dataset):
         image = torch.tensor(image, dtype=torch.float32).unsqueeze(0)
         return nfold, image
 
+# class CustomDataset(Dataset):
+#     def __init__(self, data_dir, file_name):
+#         self.data_dir = data_dir
+#         self.file_name = file_name
+#         self.file_list = [os.path.join(data_dir, file_name)]
+#
+#     def __len__(self):
+#         return len(self.file_list)
+#
+#     def __getitem__(self, idx):
+#         file_path = self.file_list[idx]
+#         image = np.load(file_path)
+#         image = torch.tensor(image, dtype=torch.float32).unsqueeze(0)  # Convert to single-channel tensor
+#         return image
 
 def cal_symmetry_loss0(batch_n_fold, batch_kernel, batch_rec, middle_size=40):
     """
@@ -157,13 +171,16 @@ def visualize_images(save, max_loss, rec_loss, file_name, figure_dir, image1, im
         plt.show()
     plt.close(fig)
 
+train_test = 'train'
+beta = 1e-06
 
 # Model paths / configuration
-model_path = f''
+model_path = './data/models/stage1'
 
-data_dir = f''
-figure_dir = f''
-nfold_dir = f""
+model_ori_path = "./data/models/pretrained_vae"  # madebyollin/sdxl-vae-fp16-fix
+data_dir = f'./data/kernel/{train_test}/'
+figure_dir = f'./data/figures/stage1/{train_test}/'
+nfold_dir = "./data/kernel_latents/n_fold_noise.npy"
 fig_save = 't'
 
 if not os.path.exists(figure_dir):
@@ -210,7 +227,8 @@ for file_index in tqdm(range(1, 101)):
             rmse = torch.sqrt(mse)
             mae = torch.mean(torch.abs(batch - reconstructed))
             max = torch.max(torch.abs(batch - reconstructed))*2
-
+            # print(rec_loss)
+            # print(reconstructed[0][0].shape)
             result_mse = mse * 4
             result_rmse = rmse * 2
             result_mae = mae * 2
@@ -220,6 +238,7 @@ for file_index in tqdm(range(1, 101)):
             results[i - 1][0] = file_index
             results[i - 1][3] = result_rmse.item()
             i += 1
+            # print(f"{relative_error :.4f}")
 
             reconstructed_cpu = reconstructed.detach().cpu().numpy()
             rec = reconstructed_cpu[0][0]

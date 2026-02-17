@@ -7,11 +7,11 @@ from sklearn.manifold import TSNE
 """t-SNE visualization of kernel latent vectors with embedded kernel images."""
 
 # Paths to latent vectors and kernel images
-# latents_file = "D:/桌面/STIR/64X64 kernels stage2/kernel_latents/train3/vae_mse_time16 80kernel latent vectors.npy"
-latents_file = "D:/桌面/STIR/64X64 kernels stage2/kernel_latents/train3--vae_mse_time16/100kernel latent vectors.npy"
-kernels_file = "D:/桌面/STIR/64X64 kernels stage2/kernel_latents/100kernels.npy"
-nfold_dir = "D:/桌面/STIR/64X64 kernels stage2/kernel_latents/n_fold.npy"
-ntype_dir = "D:/桌面/STIR/64X64 kernels stage2/kernel_latents/6_type.npy"
+# latents_file = "./data/kernel_latents/80kernel_latent_vectors.npy"
+latents_file = "./data/kernel_latents/100kernel_latent_vectors.npy"
+kernels_file = "./data/kernel_latents/100kernels.npy"
+nfold_dir = "./data/kernel_latents/n_fold_noise.npy"
+ntype_dir = "./data/kernel_latents/6_type.npy"
 
 # Load data
 kernel_latents = np.load(latents_file)
@@ -53,6 +53,6 @@ for i in range(len(X_norm)):
 ax.set_xticks([])
 ax.set_yticks([])
 plt.tight_layout()
-# plt.savefig("D:/桌面/STIR/tsne_visualization_new.png", dpi=100, bbox_inches='tight')
+# plt.savefig("./data/figures/tsne_visualization_new.png", dpi=100, bbox_inches='tight')
 
 plt.show()

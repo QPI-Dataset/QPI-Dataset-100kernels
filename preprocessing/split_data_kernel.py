@@ -8,10 +8,10 @@ You should update the paths below to match your local data layout.
 """
 
 # Input folder containing raw CSV files from the QPI dataset
-input_folder = 'D:/桌面/STIR/64X64 training data time3/64X64 vp coords/'
+input_folder = './data/raw/64X64 vp coords/'
 
 # Output folder where per-kernel .npy files (64x64) will be saved
-output_folder_obs = 'D:/桌面/STIR/64X64 kernels/data_noise_free/all_kernel/'
+output_folder_obs = './data/kernel/all/'
 if not os.path.exists(output_folder_obs):
     os.makedirs(output_folder_obs)
 

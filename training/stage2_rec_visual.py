@@ -41,7 +41,7 @@ def fourier_transform(img):
     return magnitude
 
 
-def visualize_images(save, file_name, figure_dir, image1, image2, image3, image4):
+def visualize_images(save, rec_loss, max_loss, file_name, figure_dir, image1, image2, image3, image4):
     """
     Visualize ground-truth kernel, observation, activation map, and inferred kernel.
     Layout:
@@ -76,11 +76,11 @@ def visualize_images(save, file_name, figure_dir, image1, image2, image3, image4
 
 
 # Model loading / configuration
-model_path = '/data/coding/stage1/kl_beta1e-06_alpha0.7_g0.97/vae_kl_time1'
+model_path = './data/models/stage1'
 
-fig_save = 'f'
+fig_save = 't'
 device = "cuda" if torch.cuda.is_available() and fig_save == 't' else "cpu"
-save_dir = f'/data/coding/figure/observation_comparison'
+save_dir = f'./data/figures/stage2_reconstruction'
 if not os.path.exists(save_dir):
     os.makedirs(save_dir)
 
@@ -90,11 +90,12 @@ vae = AutoencoderKL.from_pretrained(
 vae.requires_grad_(False)
 vae.eval()
 vae.to(device)
+# main_folder = "./data/channel2_mixed/all/"
+main_folder = "./data/channel2_mixed/all/"  # _train&test/test/
+model_path_stage2 = f"./data/models/stage2"
 
-main_folder = "/data/coding/channel2_mixed_data/"  # _train&test/test/
-model_path_stage2 = f"/data/coding/stage2/kl/time1"
-
-model_original_path = "/data/coding/vae_test2"  # madebyollin/sdxl-vae-fp16-fix
+model_original_path = "./data/models/pretrained_vae"  # madebyollin/sdxl-vae-fp16-fix
+# figure_dir = "./data/figures/"
 
 vae2 = AutoencoderKL.from_pretrained(
     model_path_stage2, in_channels=2, out_channels=1, ignore_mismatched_sizes=True, low_cpu_mem_usage=False
@@ -102,11 +103,11 @@ vae2 = AutoencoderKL.from_pretrained(
 vae2.requires_grad_(False)
 vae2.eval()
 vae2.to(device)
-
+# act_summary = pd.read_csv("./data/activation/activation_summary.csv")
 results = []
 i = 0
 j=0
-original_file_dir = "/data/coding/kernel/test/"  # use test split here
+original_file_dir = "./data/kernel/test/"  # use test split here
 
 # Iterate over all kernel subfolders
 k_num = 0
@@ -127,13 +128,14 @@ for sub_folder_name in tqdm(os.listdir(main_folder)):
             random_npy_file = f"{sub_folder_name} {file_index}channel2 mixed.npy"
 
             try:
-                original_kernel_file = f"/data/coding/data_noise/kernel00/Kernel number{k_num} nom_2d.npy"
+                original_kernel_file = f"./data/kernel/all/Kernel number{k_num}nom_2d.npy"
                 kernel = np.load(original_kernel_file)
 
             except Exception as e:
-                original_kernel_file = f"/data/coding/all_kernel/Kernel number{k_num}nom_2d.npy"
+                original_kernel_file = f"./data/kernel/all/Kernel number{k_num}nom_2d.npy"
                 kernel = np.load(original_kernel_file)
             kernel_data = torch.tensor(kernel).to(device)
+            # act_num = act_summary.iloc[file_index - 1, k_num - 1]
 
             file_path = os.path.join(data_dir, random_npy_file)
             if os.path.isfile(file_path):
@@ -162,7 +164,7 @@ for sub_folder_name in tqdm(os.listdir(main_folder)):
                     reconstructed_cpu = reconstructed.detach().cpu().numpy()
                 rec = reconstructed_cpu[0][0]
                 # Visualization: kernel, observation (channel 0), activation map (channel 1), reconstruction
-                visualize_images(fig_save,f"{sub_folder_name} {file_index}observation", save_dir, kernel, original_file[0], original_file[1],rec)
+                visualize_images(fig_save,0,0, f"{sub_folder_name} {file_index}observation", save_dir, kernel, original_file[0], original_file[1],rec)
                 file_amount += 1
                 if file_amount >= 60:
                     break
@@ -178,5 +180,5 @@ result_df = pd.DataFrame(results)
 
 result_df.columns = [f"kernel_num", "mae", "mse", "rmse"]
 
-result_df.to_csv(f"/data/coding/ERRORS/error.csv", index=False, header=True)
+result_df.to_csv(f"./data/errors/kl1e-06_time1_len250_OOD error.csv", index=False, header=True)
 

@@ -33,5 +33,5 @@ def main(main_folder: str) -> None:
 
 
 if __name__ == '__main__':
-    folder_path = "D:/桌面/STIR/64X64 kernels/data_noise/all_kernel/"
+    folder_path = "./data/kernel/all/"
     main(folder_path)
